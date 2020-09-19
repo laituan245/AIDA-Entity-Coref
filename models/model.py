@@ -51,9 +51,17 @@ class CorefModel(BaseModel):
         features = features.squeeze()
         mention_features = self.get_span_emb(features, gold_starts, gold_ends)
 
-        # Compute pair_scores
-        pair_embs = self.get_pair_embs(mention_features)
-        pair_scores = self.link_scorer(pair_embs)
+        if is_training:
+            # During Training
+            pair_embs = self.get_pair_embs(mention_features)
+            pair_scores = self.link_scorer(pair_embs)
+        else:
+            # During Evaluation ~ Compute scores row-by-row to avoid crashes (due to GPU memory limit)
+            n = len(gold_starts)
+            pair_scores = torch.zeros((n, n)).to(self.device)
+            for i in range(n):
+                row_pair_embs = self.get_row_pair_embs(mention_features, i)
+                pair_scores[i,:] = self.link_scorer(row_pair_embs)
 
         # Compute antecedents_mask and antecedent_scores
         k = mention_features.size()[0] # Total number of mentions
@@ -88,6 +96,25 @@ class CorefModel(BaseModel):
         preds = [gold_starts, gold_ends, top_antecedents, antecedent_scores]
 
         return loss, preds
+
+    def get_row_pair_embs(self, candidate_embs, row_index):
+        n, d = candidate_embs.size()
+        features_list = []
+
+        # Compute diff_embs and prod_embs
+        src_embs = candidate_embs.view(1, n, d)
+        target_embs = candidate_embs[row_index,:].view(1, 1, d).repeat([1, n, 1])
+        prod_embds = src_embs * target_embs
+
+        # Update features_list
+        features_list.append(src_embs)
+        features_list.append(target_embs)
+        features_list.append(prod_embds)
+
+        # Concatenation
+        pair_embs = torch.cat(features_list, 2)
+
+        return pair_embs
 
     def get_pair_embs(self, candidate_embs):
         n, d = candidate_embs.size()
