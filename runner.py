@@ -22,17 +22,18 @@ def train(config_name):
     configs = prepare_configs(config_name)
     tokenizer = AutoTokenizer.from_pretrained(configs['transformer'], do_basic_tokenize=False)
     model = CorefModel(configs)
-    if PRETRAINED_MODEL:
-        checkpoint = torch.load(PRETRAINED_MODEL)
+    if PRETRAINED_SPANISH_MODEL:
+        checkpoint = torch.load(PRETRAINED_SPANISH_MODEL)
         model.load_state_dict(checkpoint['model_state_dict'], strict=False)
 
     # Prepare datasets
+    spanish_dataset = prepare_dataset(SPANISH, tokenizer)
     ace05_dataset = prepare_dataset(ACE05, tokenizer)
     kbp2016_dataset = prepare_dataset(KBP2016, tokenizer)
     kbp2017_dataset = prepare_dataset(KBP2017, tokenizer)
     kbp_dataset = combine_datasets([kbp2016_dataset, kbp2017_dataset])
     ontonote_dataset = prepare_dataset(ONTONOTE, tokenizer)
-    dataset = combine_datasets([ontonote_dataset, ace05_dataset, kbp_dataset])
+    dataset = combine_datasets([spanish_dataset, ontonote_dataset, ace05_dataset, kbp_dataset])
     print('Number of train: {}'.format(len(dataset.examples[TRAIN])))
     print('Number of dev: {}'.format(len(dataset.examples[DEV])))
     print('Number of test: {}'.format(len(dataset.examples[TEST])))
@@ -83,6 +84,8 @@ def train(config_name):
             evaluate(model, ace05_dataset, TEST)
             print('Evaluation on the KBP test set')
             evaluate(model, kbp_dataset, TEST)
+            print('Evaluation on the Spanish test set')
+            evaluate(model, spanish_dataset, TEST)
 
 
         # Save model if it has better F1 score
@@ -94,10 +97,4 @@ def train(config_name):
             print('Saved the model', flush=True)
 
 if __name__ == '__main__':
-    # Parse argument
-    parser = ArgumentParser()
-    parser.add_argument('-c', '--config_name', default='spanbert_large')
-    args = parser.parse_args()
-
-    # Start training
-    train(args.config_name)
+    train('spanish')

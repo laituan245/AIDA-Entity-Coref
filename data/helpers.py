@@ -2,6 +2,7 @@ from constants import *
 from data.oneie import load_oneie_dataset
 from data.ontonotes import OntoNoteDataset
 from data.kbp import load_kbp_dataset
+from data.spanish import load_spanish_dataset
 
 class DatasetsWrapper:
     def __init__(self, datasets):
@@ -22,6 +23,8 @@ def prepare_dataset(name, tokenizer):
         return load_kbp_dataset(KBP2016_CLEAN, KBP2016_NOM_CLEAN, tokenizer)
     if name == KBP2017:
         return load_kbp_dataset(KBP2017_CLEAN, KBP2017_NOM_CLEAN, tokenizer)
+    if name == SPANISH:
+        return load_spanish_dataset(tokenizer)
 
 def combine_datasets(datasets):
     return DatasetsWrapper(datasets)

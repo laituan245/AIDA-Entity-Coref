@@ -30,3 +30,9 @@ KBP2016_NOM_CLEAN = 'resources/KBP16/eng_edl16_eval.kbid.nom.clean.wiki.bio'
 KBP2017 = 'KBP2017'
 KBP2017_CLEAN = 'resources/KBP17/eng_edl17_eval.kbid.clean.wiki.bio'
 KBP2017_NOM_CLEAN = 'resources/KBP17/eng_edl17_eval.kbid.nom.clean.wiki.bio'
+
+# SPANISH
+SPANISH = 'SPANISH'
+SPANISH_FILES = ['resources/ES-Coref/coref_es.tsv',
+                 'resources/ES-Coref/coref_dcep_es.tsv']
+PRETRAINED_SPANISH_MODEL = None
