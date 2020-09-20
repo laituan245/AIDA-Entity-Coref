@@ -33,6 +33,9 @@ KBP2017_NOM_CLEAN = 'resources/KBP17/eng_edl17_eval.kbid.nom.clean.wiki.bio'
 
 # SPANISH
 SPANISH = 'SPANISH'
-SPANISH_FILES = ['resources/ES-Coref/coref_es.tsv',
-                 'resources/ES-Coref/coref_dcep_es.tsv']
+SPANISH_TSV_FILES = ['resources/ES-Coref/coref_es.tsv',
+                     'resources/ES-Coref/coref_dcep_es.tsv']
+SPANISH_TXT_FILES = ['resources/ES-Coref/es.train.txt',
+                     'resources/ES-Coref/es.devel.txt',
+                     'resources/ES-Coref/es.test.txt']
 PRETRAINED_SPANISH_MODEL = None

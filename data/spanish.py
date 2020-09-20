@@ -79,7 +79,9 @@ class SpanishDataset:
 
 def load_spanish_dataset(tokenizer):
     docs = []
-    for fp in SPANISH_FILES:
+
+    # Read Spanish TSV files
+    for fp in SPANISH_TSV_FILES:
         with open(fp, 'r') as f:
             tokens, token_ctx, doc_id = [], 0, 0
             mention_starts, mention_ends, cluster_ids = [], [], []
@@ -101,7 +103,7 @@ def load_spanish_dataset(tokenizer):
                         token_ctx += 1
                     else:
                         es[0] = es[0][2:-2]
-                        mention_tokens = es[0].split('_')
+                        mention_tokens = [es[0]]
                         mention_starts.append(token_ctx)
                         mention_ends.append(token_ctx + len(mention_tokens)-1)
                         for t in mention_tokens: tokens.append(t)
@@ -114,5 +116,49 @@ def load_spanish_dataset(tokenizer):
     train_docs = docs[: total_docs // 3]
     dev_docs = docs[total_docs // 3 : 2 * total_docs // 3]
     test_docs = docs[2 * total_docs // 3 : ]
+
+    # Read Spanish txt files
+    for fp in SPANISH_TXT_FILES:
+        if 'train' in fp: cur_docs = train_docs
+        if 'devel' in fp: cur_docs = dev_docs
+        if 'test' in fp: cur_docs = test_docs
+        with open(fp, 'r') as f:
+            for line in f:
+                line = line.strip()
+                if len(line) == 0: continue
+                if line.startswith('#begin document'):
+                    doc_id = line.split()[-1]
+                    doc_id = doc_id[:doc_id.find('.tbf.xml')]
+                    tokens, mention_infos = [], []
+                elif line.startswith('#end document'):
+                    mention_starts, mention_ends, cluster_ids = [], [], []
+                    # Extract mentions from mention_infos
+                    for i in range(len(mention_infos)):
+                        for c in mention_infos[i]:
+                            if c.startswith('(') and c.endswith(')'):
+                                mention_starts.append(i)
+                                mention_ends.append(i)
+                                cluster_ids.append(int(c[1:-1]))
+                            elif c.startswith('('):
+                                mention_starts.append(i)
+                                cluster_ids.append(int(c[1:]))
+                                found = False
+                                for j in range(i+1, len(mention_infos)):
+                                    if found: break
+                                    for c2 in mention_infos[j]:
+                                        if c2.endswith(')') and not c2.startswith('(') \
+                                        and int(c2[:-1]) == cluster_ids[-1]:
+                                            mention_ends.append(j)
+                                            found = True
+                                            break
+                    assert(len(mention_starts) == len(mention_ends))
+                    assert(len(mention_starts) == len(cluster_ids))
+                    spanish_doc = \
+                        SpanishDocument(doc_id, tokens, mention_starts, mention_ends, cluster_ids, tokenizer)
+                    cur_docs.append(spanish_doc)
+                else:
+                    es = line.split('\t')
+                    tokens.append(es[1])
+                    mention_infos.append(es[-1].split('|'))
 
     return SpanishDataset(train_docs, dev_docs, test_docs)
