@@ -28,12 +28,7 @@ def train(config_name):
 
     # Prepare datasets
     spanish_dataset = prepare_dataset(SPANISH, tokenizer)
-    ace05_dataset = prepare_dataset(ACE05, tokenizer)
-    kbp2016_dataset = prepare_dataset(KBP2016, tokenizer)
-    kbp2017_dataset = prepare_dataset(KBP2017, tokenizer)
-    kbp_dataset = combine_datasets([kbp2016_dataset, kbp2017_dataset])
-    ontonote_dataset = prepare_dataset(ONTONOTE, tokenizer)
-    dataset = combine_datasets([spanish_dataset, ontonote_dataset, ace05_dataset, kbp_dataset])
+    dataset = spanish_dataset
     print('Number of train: {}'.format(len(dataset.examples[TRAIN])))
     print('Number of dev: {}'.format(len(dataset.examples[DEV])))
     print('Number of test: {}'.format(len(dataset.examples[TEST])))
@@ -73,20 +68,10 @@ def train(config_name):
 
         # Evaluation after each epoch
         with torch.no_grad():
-            print('Evaluation on the (aggregated) dev set')
+            print('Evaluation on the dev set')
             dev_f1 = evaluate(model, dataset, DEV)
-            print('Evaluation on the (aggregated) test set')
+            print('Evaluation on the test set')
             evaluate(model, dataset, TEST)
-            # Individual Test Set
-            print('Evaluation on the Ontonote test set')
-            evaluate(model, ontonote_dataset, TEST)
-            print('Evaluation on the ACE05 test set')
-            evaluate(model, ace05_dataset, TEST)
-            print('Evaluation on the KBP test set')
-            evaluate(model, kbp_dataset, TEST)
-            print('Evaluation on the Spanish test set')
-            evaluate(model, spanish_dataset, TEST)
-
 
         # Save model if it has better F1 score
         if dev_f1 > best_dev_f1:
