@@ -51,17 +51,12 @@ class CorefModel(BaseModel):
         features = features.squeeze()
         mention_features = self.get_span_emb(features, gold_starts, gold_ends)
 
-        if is_training:
-            # During Training
-            pair_embs = self.get_pair_embs(mention_features)
-            pair_scores = self.link_scorer(pair_embs)
-        else:
-            # During Evaluation ~ Compute scores row-by-row to avoid crashes (due to GPU memory limit)
-            n = len(gold_starts)
-            pair_scores = torch.zeros((n, n)).to(self.device)
-            for i in range(n):
-                row_pair_embs = self.get_row_pair_embs(mention_features, i)
-                pair_scores[i,:] = self.link_scorer(row_pair_embs)
+        # Compute pair_scores
+        n = len(gold_starts)
+        pair_scores = torch.zeros((n, n)).to(self.device)
+        for i in range(n):
+            row_pair_embs = self.get_row_pair_embs(mention_features, i)
+            pair_scores[i,:] = self.link_scorer(row_pair_embs)
 
         # Compute antecedents_mask and antecedent_scores
         k = mention_features.size()[0] # Total number of mentions
