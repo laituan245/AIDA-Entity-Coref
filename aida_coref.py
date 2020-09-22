@@ -8,8 +8,8 @@ from data import AIDADataset, AIDADocument
 from argparse import ArgumentParser
 
 # Constants
-PRETRAINED_MODEL = 'model.pt'
-CONFIG_NAME = 'spanbert_large'
+PRETRAINED_MODEL = 'es_model.pt'
+CONFIG_NAME = 'spanish'
 NIL_COUNT = 1
 
 # Helper Function
