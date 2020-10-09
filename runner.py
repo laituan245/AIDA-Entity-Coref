@@ -21,8 +21,9 @@ def train(config_name):
     # Prepare the config, the tokenizer, the datasets, and the model
     configs = prepare_configs(config_name)
     tokenizer = AutoTokenizer.from_pretrained(configs['transformer'], do_basic_tokenize=False)
+    ontonote_dataset = prepare_dataset(ONTONOTE, tokenizer)
     spanish_dataset = prepare_dataset(SPANISH, tokenizer)
-    dataset = spanish_dataset
+    dataset = combine_datasets([ontonote_dataset, spanish_dataset])
     print('Number of train: {}'.format(len(dataset.examples[TRAIN])))
     print('Number of dev: {}'.format(len(dataset.examples[DEV])))
     print('Number of test: {}'.format(len(dataset.examples[TEST])))
@@ -33,9 +34,9 @@ def train(config_name):
         print('Reloaded pretrained Spanish ckpt')
         with torch.no_grad():
             print('Evaluation on the dev set')
-            dev_f1 = evaluate(model, dataset, DEV)
+            dev_f1 = evaluate(model, spanish_dataset, DEV)
             print('Evaluation on the test set')
-            evaluate(model, dataset, TEST)
+            evaluate(model, spanish_dataset, TEST)
 
     # Prepare the optimizer and the scheduler
     num_train_docs = len(dataset.examples[TRAIN])
@@ -73,9 +74,9 @@ def train(config_name):
         # Evaluation after each epoch
         with torch.no_grad():
             print('Evaluation on the dev set')
-            dev_f1 = evaluate(model, dataset, DEV)
+            dev_f1 = evaluate(model, spanish_dataset, DEV)
             print('Evaluation on the test set')
-            evaluate(model, dataset, TEST)
+            evaluate(model, spanish_dataset, TEST)
 
         # Save model if it has better F1 score
         if dev_f1 > best_dev_f1:
