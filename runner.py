@@ -25,6 +25,12 @@ def train(config_name):
     if PRETRAINED_SPANISH_MODEL:
         checkpoint = torch.load(PRETRAINED_SPANISH_MODEL)
         model.load_state_dict(checkpoint['model_state_dict'], strict=False)
+        print('Reloaded pretrained Spanish ckpt')
+        with torch.no_grad():
+            print('Evaluation on the dev set')
+            dev_f1 = evaluate(model, dataset, DEV)
+            print('Evaluation on the test set')
+            evaluate(model, dataset, TEST)
 
     # Prepare datasets
     spanish_dataset = prepare_dataset(SPANISH, tokenizer)
