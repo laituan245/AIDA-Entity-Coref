@@ -18,9 +18,14 @@ from utils import evaluate, RunningAverage, prepare_configs
 
 # Main Functions
 def train(config_name):
-    # Prepare the config, the tokenizer, and the model
+    # Prepare the config, the tokenizer, the datasets, and the model
     configs = prepare_configs(config_name)
     tokenizer = AutoTokenizer.from_pretrained(configs['transformer'], do_basic_tokenize=False)
+    spanish_dataset = prepare_dataset(SPANISH, tokenizer)
+    dataset = spanish_dataset
+    print('Number of train: {}'.format(len(dataset.examples[TRAIN])))
+    print('Number of dev: {}'.format(len(dataset.examples[DEV])))
+    print('Number of test: {}'.format(len(dataset.examples[TEST])))
     model = CorefModel(configs)
     if PRETRAINED_SPANISH_MODEL:
         checkpoint = torch.load(PRETRAINED_SPANISH_MODEL)
@@ -31,13 +36,6 @@ def train(config_name):
             dev_f1 = evaluate(model, dataset, DEV)
             print('Evaluation on the test set')
             evaluate(model, dataset, TEST)
-
-    # Prepare datasets
-    spanish_dataset = prepare_dataset(SPANISH, tokenizer)
-    dataset = spanish_dataset
-    print('Number of train: {}'.format(len(dataset.examples[TRAIN])))
-    print('Number of dev: {}'.format(len(dataset.examples[DEV])))
-    print('Number of test: {}'.format(len(dataset.examples[TEST])))
 
     # Prepare the optimizer and the scheduler
     num_train_docs = len(dataset.examples[TRAIN])
