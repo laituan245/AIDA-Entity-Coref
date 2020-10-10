@@ -158,6 +158,9 @@ def load_spanish_dataset(tokenizer):
                     assert(len(mention_starts) == len(cluster_ids))
                     spanish_doc = \
                         SpanishDocument(doc_id, tokens, mention_starts, mention_ends, cluster_ids, tokenizer)
+                    if 'train' in fp and spanish_doc.num_words > 1000:
+                        print('skipped {}'.format(spanish_doc.doc_id))
+                        continue # Remove this line when there is enough GPU memory
                     cur_docs.append(spanish_doc)
                 else:
                     es = line.split('\t')
