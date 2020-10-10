@@ -38,4 +38,4 @@ SPANISH_TSV_FILES = ['resources/ES-Coref/coref_es.tsv',
 SPANISH_TXT_FILES = ['resources/ES-Coref/es.train.txt',
                      'resources/ES-Coref/es.devel.txt',
                      'resources/ES-Coref/es.test.txt']
-PRETRAINED_SPANISH_MODEL = None
+PRETRAINED_SPANISH_MODEL = '/shared/nas/data/m1/tuanml2/aida_entity_coref/spanish/model.pt'
