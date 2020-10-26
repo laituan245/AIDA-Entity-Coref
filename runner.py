@@ -25,6 +25,7 @@ def train(config_name):
     if PRETRAINED_MODEL:
         checkpoint = torch.load(PRETRAINED_MODEL)
         model.load_state_dict(checkpoint['model_state_dict'], strict=False)
+        print('Reload a model')
 
     # Prepare datasets
     ace05_dataset = prepare_dataset(ACE05, tokenizer)
@@ -37,6 +38,23 @@ def train(config_name):
     print('Number of dev: {}'.format(len(dataset.examples[DEV])))
     print('Number of test: {}'.format(len(dataset.examples[TEST])))
 
+    # Evaluation (if there exists a checkpoint)
+    best_dev_f1 = 0
+    if PRETRAINED_MODEL:
+        with torch.no_grad():
+            print('Evaluation on the (aggregated) dev set')
+            dev_f1 = evaluate(model, dataset, DEV)
+            print('Evaluation on the (aggregated) test set')
+            evaluate(model, dataset, TEST)
+            # Individual Test Set
+            print('Evaluation on the Ontonote test set')
+            evaluate(model, ontonote_dataset, TEST)
+            print('Evaluation on the ACE05 test set')
+            evaluate(model, ace05_dataset, TEST)
+            print('Evaluation on the KBP test set')
+            evaluate(model, kbp_dataset, TEST)
+        best_dev_f1 = dev_f1
+
     # Prepare the optimizer and the scheduler
     num_train_docs = len(dataset.examples[TRAIN])
     num_epoch_steps = math.ceil(num_train_docs / configs['batch_size'])
@@ -47,7 +65,7 @@ def train(config_name):
 
     # Start training
     accumulated_loss = RunningAverage()
-    best_dev_f1, iters, batch_loss = 0, 0, 0
+    iters, batch_loss = 0, 0
     for i in range(configs['epochs']):
         print('Starting epoch {}'.format(i+1), flush=True)
         train_indices = list(range(num_train_docs))
