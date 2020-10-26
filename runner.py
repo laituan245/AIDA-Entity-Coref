@@ -33,9 +33,16 @@ def train(config_name):
         model.load_state_dict(checkpoint['model_state_dict'], strict=False)
         print('Reloaded pretrained Spanish ckpt')
         with torch.no_grad():
-            print('Evaluation on the dev set')
+            # Evaluation on the English (Ontonotes) dataset
+            print('Evaluation on the (English) Ontonotes dev set')
+            dev_f1 = evaluate(model, ontonote_dataset, DEV)
+            print('Evaluation on the (English) Ontonotes test set')
+            evaluate(model, ontonote_dataset, TEST)
+
+            # Evaluation on the Spanish dataset
+            print('Evaluation on the (Spanish) dev set')
             dev_f1 = evaluate(model, spanish_dataset, DEV)
-            print('Evaluation on the test set')
+            print('Evaluation on the (Spanish) test set')
             evaluate(model, spanish_dataset, TEST)
 
     # Prepare the optimizer and the scheduler
