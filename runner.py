@@ -21,23 +21,29 @@ def train(config_name):
     # Prepare the config, the tokenizer, the datasets, and the model
     configs = prepare_configs(config_name)
     tokenizer = AutoTokenizer.from_pretrained(configs['transformer'], do_basic_tokenize=False)
-    ontonote_dataset = prepare_dataset(ONTONOTE, tokenizer)
+    # English datasets
+    english_dataset = prepare_dataset(ONTONOTE, tokenizer)
+
+    # Spanish dataset
     spanish_dataset = prepare_dataset(SPANISH, tokenizer)
-    dataset = combine_datasets([ontonote_dataset, spanish_dataset])
+
+    # Combine all the dataset
+    dataset = combine_datasets([english_dataset, spanish_dataset])
+
     print('Number of train: {}'.format(len(dataset.examples[TRAIN])))
     print('Number of dev: {}'.format(len(dataset.examples[DEV])))
     print('Number of test: {}'.format(len(dataset.examples[TEST])))
     model = CorefModel(configs)
-    if PRETRAINED_SPANISH_MODEL:
-        checkpoint = torch.load(PRETRAINED_SPANISH_MODEL)
+    if PRETRAINED_CROSS_LINGUAL_MODEL:
+        checkpoint = torch.load(PRETRAINED_CROSS_LINGUAL_MODEL)
         model.load_state_dict(checkpoint['model_state_dict'], strict=False)
         print('Reloaded pretrained Spanish ckpt')
         with torch.no_grad():
             # Evaluation on the English (Ontonotes) dataset
             print('Evaluation on the (English) Ontonotes dev set')
-            dev_f1 = evaluate(model, ontonote_dataset, DEV)
+            dev_f1 = evaluate(model, english_dataset, DEV)
             print('Evaluation on the (English) Ontonotes test set')
-            evaluate(model, ontonote_dataset, TEST)
+            evaluate(model, english_dataset, TEST)
 
             # Evaluation on the Spanish dataset
             print('Evaluation on the (Spanish) dev set')
@@ -80,10 +86,12 @@ def train(config_name):
 
         # Evaluation after each epoch
         with torch.no_grad():
-            print('Evaluation on the dev set')
-            dev_f1 = evaluate(model, spanish_dataset, DEV)
-            print('Evaluation on the test set')
+            print('Evaluation on the (combined) dev set')
+            dev_f1 = evaluate(model, dataset, DEV)
+            print('Evaluation on the (Spanish) test set')
             evaluate(model, spanish_dataset, TEST)
+            print('Evaluation on the (English) test set')
+            evaluate(model, english_dataset, TEST)
 
         # Save model if it has better F1 score
         if dev_f1 > best_dev_f1:
@@ -94,4 +102,4 @@ def train(config_name):
             print('Saved the model', flush=True)
 
 if __name__ == '__main__':
-    train('spanish')
+    train('basic')
