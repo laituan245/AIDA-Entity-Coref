@@ -13,7 +13,7 @@ MAX_TRAINING_SENTENCES = 3
 
 class _Dataset(object):
     def __init__(self, base_path, tokenizer, verbose = True):
-        language = 'english'
+        language = 'chinese'
         self.language = language
         self.tokenizer = tokenizer
 

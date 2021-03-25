@@ -18,8 +18,8 @@ ACE05 = 'ACE05'
 # OntoNote Dataset
 ONTONOTE = 'ONTONOTE'
 ONTONOTE_BASE_PATH = '/shared/nas/data/m1/tuanml2/datasets/ontonotes/data/'
-ONTONOTE_DEV_PATH = '/shared/nas/data/m1/tuanml2/datasets/ontonotes/data/english/dev.english.v4_gold_conll'
-ONTONOTE_TEST_PATH = '/shared/nas/data/m1/tuanml2/datasets/ontonotes/data/english/test.english.v4_gold_conll'
+ONTONOTE_DEV_PATH = '/shared/nas/data/m1/tuanml2/datasets/ontonotes/data/chinese/dev.english.v4_gold_conll'
+ONTONOTE_TEST_PATH = '/shared/nas/data/m1/tuanml2/datasets/ontonotes/data/chinese/test.english.v4_gold_conll'
 
 # KBP 2016
 KBP2016 = 'KBP2016'

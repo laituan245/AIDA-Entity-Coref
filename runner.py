@@ -16,40 +16,35 @@ from argparse import ArgumentParser
 from data import prepare_dataset, combine_datasets
 from utils import evaluate, RunningAverage, prepare_configs
 
+PRETRAINED_CHINESE_MODEL = None
+
 # Main Functions
 def train(config_name):
     # Prepare the config, the tokenizer, the datasets, and the model
     configs = prepare_configs(config_name)
     tokenizer = AutoTokenizer.from_pretrained(configs['transformer'], do_basic_tokenize=False)
-    # English datasets
-    english_dataset = prepare_dataset(ONTONOTE, tokenizer)
-
-    # Spanish dataset
-    spanish_dataset = prepare_dataset(SPANISH, tokenizer)
+    # Chinese datasets
+    chinese_dataset = prepare_dataset(ONTONOTE, tokenizer)
 
     # Combine all the dataset
-    dataset = combine_datasets([english_dataset, spanish_dataset])
+    dataset = combine_datasets([chinese_dataset])
 
     print('Number of train: {}'.format(len(dataset.examples[TRAIN])))
     print('Number of dev: {}'.format(len(dataset.examples[DEV])))
     print('Number of test: {}'.format(len(dataset.examples[TEST])))
     model = CorefModel(configs)
-    if PRETRAINED_CROSS_LINGUAL_MODEL:
-        checkpoint = torch.load(PRETRAINED_CROSS_LINGUAL_MODEL)
+    if PRETRAINED_CHINESE_MODEL:
+        checkpoint = torch.load(PRETRAINED_CHINESE_MODEL)
         model.load_state_dict(checkpoint['model_state_dict'], strict=False)
-        print('Reloaded pretrained Spanish ckpt')
+        print('Reloaded pretrained Chinese ckpt')
         with torch.no_grad():
-            # Evaluation on the English (Ontonotes) dataset
-            print('Evaluation on the (English) Ontonotes dev set')
-            dev_f1 = evaluate(model, english_dataset, DEV)
-            print('Evaluation on the (English) Ontonotes test set')
-            evaluate(model, english_dataset, TEST)
+            print('Evaluation on the (combined) dev set')
+            best_dev_f1 = evaluate(model, dataset, DEV)
+            print('Evaluation on the (combined) test set')
+            evaluate(model, dataset, TEST)
+    else:
+        best_dev_f1 = 0
 
-            # Evaluation on the Spanish dataset
-            print('Evaluation on the (Spanish) dev set')
-            dev_f1 = evaluate(model, spanish_dataset, DEV)
-            print('Evaluation on the (Spanish) test set')
-            evaluate(model, spanish_dataset, TEST)
 
     # Prepare the optimizer and the scheduler
     num_train_docs = len(dataset.examples[TRAIN])
@@ -61,7 +56,7 @@ def train(config_name):
 
     # Start training
     accumulated_loss = RunningAverage()
-    best_dev_f1, iters, batch_loss = 0, 0, 0
+    iters, batch_loss = 0, 0
     for i in range(configs['epochs']):
         print('Starting epoch {}'.format(i+1), flush=True)
         train_indices = list(range(num_train_docs))
@@ -88,10 +83,8 @@ def train(config_name):
         with torch.no_grad():
             print('Evaluation on the (combined) dev set')
             dev_f1 = evaluate(model, dataset, DEV)
-            print('Evaluation on the (Spanish) test set')
-            evaluate(model, spanish_dataset, TEST)
-            print('Evaluation on the (English) test set')
-            evaluate(model, english_dataset, TEST)
+            print('Evaluation on the (combined) test set')
+            evaluate(model, dataset, TEST)
 
         # Save model if it has better F1 score
         if dev_f1 > best_dev_f1:
