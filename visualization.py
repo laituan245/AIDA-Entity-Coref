@@ -56,6 +56,13 @@ def visualize(pretrained_model):
         model.load_state_dict(checkpoint['model_state_dict'], strict=False)
     print('Prepared model, tokenizer, and dataset')
 
+    # Evaluation
+    with torch.no_grad():
+        print('Evaluation on the (combined) dev set')
+        evaluate(model, dataset, DEV)
+        print('Evaluation on the (combined) test set')
+        evaluate(model, dataset, TEST)
+
     # Visualize predictions on the test set
     split = 'test'
     total_examples = len(dataset.examples[split])
