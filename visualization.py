@@ -111,7 +111,7 @@ def visualize(pretrained_model):
 if __name__ == '__main__':
     # Parse argument
     parser = ArgumentParser()
-    parser.add_argument('--pretrained_model', default=None)
+    parser.add_argument('--pretrained_model', default='model.pt')
     args = parser.parse_args()
 
     # Visualize
