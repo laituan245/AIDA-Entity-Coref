@@ -12,8 +12,7 @@ MAX_SEGMENT_LEN = 384
 MAX_TRAINING_SENTENCES = 3
 
 class _Dataset(object):
-    def __init__(self, base_path, tokenizer, verbose = True):
-        language = 'chinese'
+    def __init__(self, base_path, tokenizer, language, verbose = True):
         self.language = language
         self.tokenizer = tokenizer
 
@@ -105,8 +104,8 @@ class _Dataset(object):
         return np.array(starts), np.array(ends)
 
 class OntoNoteDataset(_Dataset):
-    def __init__(self, base_path, tokenizer, verbose = True):
-        super(OntoNoteDataset, self).__init__(base_path, tokenizer, verbose)
+    def __init__(self, base_path, tokenizer, language, verbose = True):
+        super(OntoNoteDataset, self).__init__(base_path, tokenizer, language, verbose)
 
         # Convert to CorefQA format
         for split in [TRAIN, DEV, TEST]:

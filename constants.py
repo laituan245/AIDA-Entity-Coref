@@ -15,11 +15,10 @@ SPEAKER_START, SPEAKER_END = '[unused1]', '[unused2]'
 # ACE05 Dataset
 ACE05 = 'ACE05'
 
-# OntoNote Dataset (Chinese)
-ONTONOTE = 'ONTONOTE'
+# OntoNote Dataset (English + Chinese Versions)
+ENGLISH_ONTONOTE = 'ENGLISH_ONTONOTE'
+CHINESE_ONTONOTE = 'CHINESE_ONTONOTE'
 ONTONOTE_BASE_PATH = '/shared/nas/data/m1/tuanml/coref/datasets/ontonotes/data/'
-ONTONOTE_DEV_PATH = '/shared/nas/data/m1/tuanml/coref/datasets/ontonotes/data/chinese/dev.chinese.v4_gold_conll'
-ONTONOTE_TEST_PATH = '/shared/nas/data/m1/tuanml/coref/datasets/ontonotes/data/chinese/test.chinese.v4_gold_conll'
 
 # KBP 2016
 KBP2016 = 'KBP2016'

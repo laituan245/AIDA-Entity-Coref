@@ -15,8 +15,10 @@ class DatasetsWrapper:
                 for e in dataset.tensorized_examples[split]: self.tensorized_examples[split].append(e)
 
 def prepare_dataset(name, tokenizer):
-    if name == ONTONOTE:
-        return OntoNoteDataset(ONTONOTE_BASE_PATH, tokenizer)
+    if name == ENGLISH_ONTONOTE:
+        return OntoNoteDataset(ONTONOTE_BASE_PATH, tokenizer, 'english')
+    if name == CHINESE_ONTONOTE:
+        return OntoNoteDataset(ONTONOTE_BASE_PATH, tokenizer, 'chinese')
     if name == ACE05:
         return load_oneie_dataset('resources/ACE05-E', tokenizer)
     if name == KBP2016:
