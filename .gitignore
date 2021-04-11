@@ -6,6 +6,8 @@ data/english/*
 predictions/
 tmp/
 test.py
+test.txt
+sample_test_jsons/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

@@ -1,10 +1,55 @@
 import os
 import copy
+import json
 
 from os import listdir
 from os.path import isfile, join
 from utils import *
 
+# Helper Functions
+def load_edl_doc(doc_path, tokenizer, verbose=True):
+    with open(doc_path, 'r', encoding='utf-8') as r:
+        doc_id, words_ctx, tokens_ids, sentences, entity_mentions = None, 0, [], [], []
+        for line in r:
+            sent = json.loads(line)
+            sentences.append(sent['tokens'])
+            graph = sent['graph']
+            tokens_ids += sent['token_ids']
+            for entity in graph['entities']:
+                entity[0] += words_ctx
+                entity[1] += words_ctx-1  # Convert to inclusive endpoint
+                entity_mentions.append({
+                    'start_token': entity[0], 'end_token': entity[1]
+                })
+            # Update words_ctx
+            words_ctx += len(sent['tokens'])
+            # Update doc_id (if None)
+            if doc_id is None: doc_id = sent['doc_id']
+            else: assert(doc_id == sent['doc_id'])
+    words = flatten(sentences)
+    assert(len(words) == words_ctx)
+    assert(len(words) == len(tokens_ids))
+
+    # Build an EDLDocument
+    aida_doc = EDLDocument(doc_id, words, tokens_ids, entity_mentions, tokenizer)
+
+    # Logs
+    if verbose: print(f'Loaded {doc_path} (Nb tokens {len(aida_doc.doc_tokens)})')
+
+    return aida_doc
+
+def load_edl_datasets(jsons_dir, tokenizer):
+    edl_docs = []
+    filenames = [f for f in listdir(jsons_dir) if isfile(join(jsons_dir, f)) and f.endswith('json')]
+    for filename in filenames:
+        file_path = join(jsons_dir, filename)
+        edl_doc = load_edl_doc(file_path, tokenizer, verbose=True)
+        edl_docs.append(edl_doc)
+    print(f'Number of docs loaded from {jsons_dir}: {len(edl_docs)}')
+    return edl_docs
+
+
+# Classes
 class EDLDocument:
     def __init__(self, doc_id, words, words_ids, entity_mentions, tokenizer):
         assert(len(words) == len(words_ids))
