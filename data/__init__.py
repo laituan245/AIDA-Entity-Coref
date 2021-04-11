@@ -4,6 +4,7 @@ from utils import *
 from data.ontonotes import OntoNoteDataset
 from data.helpers import prepare_dataset, combine_datasets
 from data.aida import AIDADataset, AIDADocument
+from data.edl import EDLDocument
 
 def load_oneie_doc(doc_path, tokenizer, verbose=True):
     with open(doc_path, 'r', encoding='utf-8') as r:
@@ -28,8 +29,8 @@ def load_oneie_doc(doc_path, tokenizer, verbose=True):
     assert(len(words) == words_ctx)
     assert(len(words) == len(tokens_ids))
 
-    # Build an AIDADocument
-    aida_doc = AIDADocument(doc_id, words, entity_mentions, tokenizer)
+    # Build an EDLDocument
+    aida_doc = EDLDocument(doc_id, words, tokens_ids, entity_mentions, tokenizer)
 
     # Logs
     if verbose: print('Loaded {}'.format(doc_path))
