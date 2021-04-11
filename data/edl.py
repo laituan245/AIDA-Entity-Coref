@@ -58,6 +58,15 @@ class EDLDocument:
         self.words_ids = words_ids
         self.entity_mentions = entity_mentions
 
+        # Append mention_id and mention_text to each entity mention
+        self.id2entitymention = {}
+        for e in self.entity_mentions:
+            start_char_locs = words_ids[e['start_token']].split(':')[-1].split('-')
+            end_char_locs = words_ids[e['end_token']].split(':')[-1].split('-')
+            e['mention_id'] = f'{doc_id}:{start_char_locs[0]}-{end_char_locs[-1]}'
+            e['mention_text'] = words[e['start_token']:e['end_token']+1]
+            self.id2entitymention[e['mention_id']] = e
+
         # Build doc_tokens, self.word_starts_indexes, self.word_ends_indexes
         doc_tokens, word_starts_indexes, word_ends_indexes, start_index = [], [], [], 0
         for w in self.words:
@@ -102,6 +111,11 @@ class EDLDocumentPair:
         self.words = doc1.words + ['[SEP]'] + doc2.words
         self.words_ids = doc1.words_ids + ['[SEP]'] + doc2.words_ids
         self.doc_tokens = doc1.doc_tokens + ['[SEP]'] + doc2.doc_tokens
+
+        # Build id2entitymention
+        self.id2entitymention = {}
+        for k in doc1.id2entitymention: self.id2entitymention[k] = doc1.id2entitymention[k]
+        for k in doc2.id2entitymention: self.id2entitymention[k] = doc2.id2entitymention[k]
 
         # All entity mentions
         entity_mentions_1 = copy.deepcopy(doc1.entity_mentions)
