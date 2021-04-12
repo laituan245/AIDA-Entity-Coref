@@ -5,6 +5,7 @@ from os.path import join
 from constants import *
 from utils import *
 from data import AIDADataset, AIDADocument
+from edl_inference import inference
 from argparse import ArgumentParser
 
 # Constants
@@ -37,48 +38,45 @@ def cluster_from_pairs(id2entity, pairs):
         count = {}
         for e in c:
             official_id = e['official_kb_id']
-            if official_id.startswith('NIL'): official_id = 'NIL'
-            if official_id == 'NIL':
-                continue
             count[official_id] = count.get(official_id, 0) + 1
-
-        if len(count) == 0:
-            nil_str = str(NIL_COUNT)
-            while len(nil_str) < 8: nil_str = '0' + nil_str
-            label = 'NIL' + nil_str
-            NIL_COUNT += 1
-        else:
-            label = max(count, key=lambda k: count[k])
+        label = max(count, key=lambda k: count[k])
         clusterlabels.append(label)
 
-    return clusters, id2cluster, clusterlabels
+    # label2cluster
+    label2cluster = {}
+    for ix, l in enumerate(clusterlabels):
+        label2cluster[l] = ix
+    for _id in id2entity:
+        official_id = id2entity[_id]['official_kb_id']
+        if official_id.startswith('NIL'): continue
+        if official_id != clusterlabels[id2cluster[_id]]:
+            if not official_id in label2cluster:
+                label2cluster[official_id] = len(clusterlabels)
+                clusterlabels.append(official_id)
+            id2cluster[_id] = label2cluster[official_id]
+
+    return id2cluster, clusterlabels
 
 # Main code
 if __name__ == "__main__":
     # Parse argument
     parser = ArgumentParser()
-    parser.add_argument('-edl_official', '--edl_official', default='samples/en.linking.tab')
-    parser.add_argument('-edl_freebase', '--edl_freebase', default='samples/en.linking.freebase.tab')
-    parser.add_argument('-l', '--ltf_dir', default='samples/ltf')
-    parser.add_argument('-o', '--output', default='samples/output.tab')
-    parser.add_argument('-d', '--debug', default=False)
+    parser.add_argument('-edl_official', '--edl_official', default='/shared/nas/data/m1/manling2/aida_docker_test/edl_en_zh/testdata_zh/edl/zh.linking.tab')
+    parser.add_argument('-edl_freebase', '--edl_freebase', default='/shared/nas/data/m1/manling2/aida_docker_test/edl_en_zh/testdata_zh/edl/zh.linking.freebase.tab')
+    parser.add_argument('-l', '--json_dir', default='/shared/nas/data/m1/manling2/aida_docker_test/edl_en_zh/testdata_zh/edl/json/')
+    parser.add_argument('-o', '--output', default='samples/edl_output.tab')
 
     args = parser.parse_args()
 
-    # Read LTF files
-    doc2tokens = read_ltf_files(args.ltf_dir)
-
     # Read Tab files
-    loc2ctx, entity_mentions = {}, []
+    loc2ctx, entity_mentions, id2freebaseid, id2officialkbid, id2type = {}, [], {}, {}, {}
     entity_mentions_official = read_tab(args.edl_official)
     entity_mentions_freebase = read_tab(args.edl_freebase)
     for e in entity_mentions_official:
         loc = e['doc_id'], e['start_char'], e['end_char']
-        assert(e['doc_id'] in doc2tokens)
         if not loc in loc2ctx: loc2ctx[loc] = len(loc2ctx)
     for e in entity_mentions_freebase:
         loc = e['doc_id'], e['start_char'], e['end_char']
-        assert(e['doc_id'] in doc2tokens)
         assert(loc in loc2ctx)
     for loc in loc2ctx: entity_mentions.append({})
     for loc in loc2ctx:
@@ -90,7 +88,7 @@ if __name__ == "__main__":
         entity_mentions[ctx]['doc_id'] = doc_id
         entity_mentions[ctx]['start_char'] = start_char
         entity_mentions[ctx]['end_char'] = end_char
-        entity_mentions[ctx]['mention_id'] = 'EN_MENTION_{}'.format(ctx_str)
+        entity_mentions[ctx]['mention_id'] = 'ZH_MENTION_{}'.format(ctx_str)
 
     # Combine entity linking results
     for e1 in entity_mentions_freebase:
@@ -100,6 +98,8 @@ if __name__ == "__main__":
         entity_mentions[ctx]['text'] = e1['text']
         assert(entity_mentions[ctx]['start_char'] == e1['start_char'])
         assert(entity_mentions[ctx]['end_char'] == e1['end_char'])
+        id2freebaseid['{}:{}-{}'.format(loc[0], loc[1], loc[2])] = e1['kb_id']
+        id2type['{}:{}-{}'.format(loc[0], loc[1], loc[2])] = e1['entity_type']
 
     for e2 in entity_mentions_official:
         loc = e2['doc_id'], e2['start_char'], e2['end_char']
@@ -108,106 +108,59 @@ if __name__ == "__main__":
         assert(entity_mentions[ctx]['start_char'] == e2['start_char'])
         assert(entity_mentions[ctx]['end_char'] == e2['end_char'])
         assert(entity_mentions[ctx]['text'] == e2['text'])
+        id2officialkbid['{}:{}-{}'.format(loc[0], loc[1], loc[2])] = e2['kb_id']
+        id2type['{}:{}-{}'.format(loc[0], loc[1], loc[2])] = e2['entity_type']
 
-    # Prepare the config, the tokenizer, and the model
-    configs = prepare_configs(CONFIG_NAME)
-    tokenizer = AutoTokenizer.from_pretrained(configs['transformer'], do_basic_tokenize=False)
-    model = CorefModel(configs)
-    if PRETRAINED_MODEL and os.path.isfile(PRETRAINED_MODEL):
-        if torch.cuda.is_available():
-            checkpoint = torch.load(PRETRAINED_MODEL)
-        else:
-            checkpoint = torch.load(PRETRAINED_MODEL, map_location='cpu')
-        model.load_state_dict(checkpoint['model_state_dict'], strict=False)
-        print('Reload the model')
-    elif not args.debug:
-        raise Exception('A trained model is required')
+    # Extract predicted coreferential pairs
+    assert(PRETRAINED_MODEL and os.path.isfile(PRETRAINED_MODEL))
+    predicted_pairs, id2entity = inference(args.json_dir, pretrained_model=PRETRAINED_MODEL)
+    for _id in id2freebaseid:
+        id2entity[_id]['freebase_id'] = id2freebaseid[_id]
+    for _id in id2officialkbid:
+        id2entity[_id]['official_kb_id'] = id2officialkbid[_id]
 
-    # Create AIDADocument
-    docs = []
-    for doc_id in doc2tokens:
-        tokens = doc2tokens[doc_id]
-        words = [t[-1] for t in tokens]
-        start2word, end2word = {}, {}
-        for ix, (start, end, _) in enumerate(tokens):
-            start2word[int(start)] = ix
-            end2word[int(end)] = ix
-        doc_mentions = []
-        for e in entity_mentions:
-            if e['doc_id'] == doc_id:
-                e['start_token'] = start2word[int(e['start_char'])]
-                e['end_token'] = end2word[int(e['end_char'])]
-                doc_mentions.append(e)
-        if len(words) == 0: continue
-        docs.append(AIDADocument(doc_id, words, doc_mentions, tokenizer))
-    dataset = AIDADataset(docs)
+    # Use entity linking results to remove some of the predicted pairs
+    filtered_pairs = set()
+    for e1, e2 in predicted_pairs:
+        should_insert = True
+        fb_id_i, fb_id_j = id2freebaseid[e1], id2freebaseid[e2]
+        officialkb_id_i, officialkb_id_j = id2officialkbid[e1], id2officialkbid[e2]
+        if not fb_id_i.startswith('NIL') and not fb_id_j.startswith('NIL') and fb_id_i != fb_id_j:
+            should_insert = False
+        if not officialkb_id_i.startswith('NIL') and not officialkb_id_j.startswith('NIL') \
+        and officialkb_id_i != officialkb_id_j:
+            should_insert = False
+        if id2type[e1] != id2type[e2]:
+            should_insert = False
+        if should_insert:
+            filtered_pairs.add((e1, e2))
+            filtered_pairs.add((e2, e1))
 
-    # Apply the coref model
-    with torch.no_grad():
-        doc2id2cluster, doc2clusterlabels = {}, {}
-        for doc_index, tensorized_example in enumerate(dataset.tensorized_examples[TEST]):
-            entities = dataset.data[doc_index].entity_mentions
-            if len(entities) == 0: continue
-            preds = model(*tensorized_example)[1]
-            preds = [x.cpu().data.numpy() for x in preds]
-            mention_starts, mention_ends, top_antecedents, top_antecedent_scores = preds
-            predicted_antecedents = get_predicted_antecedents(top_antecedents, top_antecedent_scores)
+    # Use entity linking results to add pairs across docs
+    entity_mention_ids = list(id2entity.keys())
+    for index1 in range(len(entity_mention_ids)):
+        for index2 in range(index1+1, len(entity_mention_ids)):
+            e1 = entity_mention_ids[index1]
+            e2 = entity_mention_ids[index2]
+            fb_id_i, fb_id_j = id2freebaseid[e1], id2freebaseid[e2]
+            if not fb_id_i.startswith('NIL') and not fb_id_j.startswith('NIL') and fb_id_i == fb_id_j:
+                filtered_pairs.add((e1, e2))
+                filtered_pairs.add((e2, e1))
 
-            # Build id2entity
-            id2entity = {}
-            for entity in entities:
-                id2entity[entity['mention_id']] = entity
+    # Determine final clusters
+    id2cluster, clusterlabels = cluster_from_pairs(id2entity, filtered_pairs)
 
-            # Decide cluster from predicted_antecedents
-            predicted_clusters, m2cluster = [], {}
-            for ix, (s, e) in enumerate(zip(mention_starts, mention_ends)):
-                if predicted_antecedents[ix] < 0:
-                    cluster_id = len(predicted_clusters)
-                    predicted_clusters.append([entities[ix]])
-                else:
-                    antecedent_idx = predicted_antecedents[ix]
-                    p_s, p_e = mention_starts[antecedent_idx], mention_ends[antecedent_idx]
-                    cluster_id = m2cluster[(p_s, p_e)]
-                    predicted_clusters[cluster_id].append(entities[ix])
-                m2cluster[(s,e)] = cluster_id
-
-            # Initialize predicted_pairs
-            predicted_pairs = set()
-            for c in predicted_clusters:
-                if len(c) <= 1: continue
-                for i in range(len(c)):
-                    for j in range(i+1, len(c)):
-                        should_insert = True
-                        if not c[i]['freebase_id'].startswith('NIL') and not c[j]['freebase_id'].startswith('NIL') \
-                        and not c[i]['official_kb_id'].startswith('NIL') and not c[j]['official_kb_id'].startswith('NIL'):
-                            if c[i]['freebase_id'] != c[j]['freebase_id'] and c[i]['official_kb_id'] != c[j]['official_kb_id']:
-                                should_insert = False
-                        if should_insert:
-                            predicted_pairs.add((c[i]['mention_id'], c[j]['mention_id']))
-                            predicted_pairs.add((c[j]['mention_id'], c[i]['mention_id']))
-
-            # Sanity check
-            for e, m_start, m_end in zip(entities, mention_starts, mention_ends):
-                assert(e['start'] == m_start and e['end'] == m_end)
-
-            # First cluster
-            clusters, id2cluster, clusterlabels = cluster_from_pairs(id2entity, predicted_pairs)
-            doc2id2cluster[dataset.data[doc_index].doc_id] = id2cluster
-            doc2clusterlabels[dataset.data[doc_index].doc_id] = clusterlabels
-
-        # Output
-        lines = []
-        with open(args.edl_official, 'r', encoding='utf8') as f:
-            for line in f: lines.append(line)
-        with open(args.output, 'w+', encoding='utf8') as f:
-            for line in lines:
-                es = line.split('\t')
-                doc_id, text_loc = es[3].split(':')
-                start_char, end_char = text_loc.split('-')
-                entity_id = entity_mentions[loc2ctx[(doc_id, start_char, end_char)]]['mention_id']
-                es[1] = entity_id
-                clusterlabels = doc2clusterlabels[doc_id]
-                id2cluster = doc2id2cluster[doc_id]
-                es[4] = clusterlabels[id2cluster[entity_id]]
-                line = '\t'.join(es)
-                f.write(line)
+    # Output
+    lines = []
+    with open(args.edl_official, 'r', encoding='utf8') as f:
+        for line in f: lines.append(line)
+    with open(args.output, 'w+', encoding='utf8') as f:
+        for line in lines:
+            es = line.split('\t')
+            doc_id, text_loc = es[3].split(':')
+            start_char, end_char = text_loc.split('-')
+            entity_id = entity_mentions[loc2ctx[(doc_id, start_char, end_char)]]['mention_id']
+            es[1] = entity_id
+            es[4] = clusterlabels[id2cluster[f'{doc_id}:{start_char}-{end_char}']]
+            line = '\t'.join(es)
+            f.write(line)

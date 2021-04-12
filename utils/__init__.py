@@ -56,7 +56,8 @@ def read_tab(tab_fp):
                 'doc_id': doc_id,
                 'start_char': start_char,
                 'end_char': end_char,
-                'kb_id': es[4]
+                'kb_id': es[4],
+                'entity_type': es[5],
             })
     return entity_mentions
 

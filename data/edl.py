@@ -98,7 +98,7 @@ class EDLDocument:
         self.gold_ends = np.array(gold_ends)
 
         # Tensorized Example
-        self.tensorized_examples = (
+        self.tensorized_example = (
             (np.array(self.token_windows), np.array(self.input_masks), False,
             self.gold_starts, self.gold_ends, np.array([]), np.array(self.mask_windows))
         )

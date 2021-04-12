@@ -38,15 +38,17 @@ def inference(jsons_dir, config_name='basic',
 
     # Load data for inference
     edl_docs = load_edl_datasets(jsons_dir, tokenizer)
-    dummy_doc = EDLDocument('dummy_edl_doc', [], [], [], tokenizer)
-    edl_docs = [dummy_doc] + edl_docs
+    id2entity = {}
+    for doc in edl_docs:
+        for e in doc.entity_mentions:
+            id2entity[e['mention_id']] = e
 
     # Apply the coref model
     print('Applying the coref model')
     start_time = time.time()
     all_predicted_pairs = set()
-    for i in range(len(edl_docs)-1):
-        inst = EDLDocumentPair(edl_docs[i], edl_docs[i+1], tokenizer)
+    for i in range(len(edl_docs)):
+        inst = edl_docs[i]
         with torch.no_grad():
             preds = model(*inst.tensorized_example)[1]
             predicted_pairs = extract_predicted_pairs(inst.entity_mentions, preds)
@@ -54,7 +56,7 @@ def inference(jsons_dir, config_name='basic',
                 all_predicted_pairs.add((p1, p2))
 
     print(f'Running time took {time.time() - start_time} seconds')
-    return all_predicted_pairs
+    return all_predicted_pairs, id2entity
 
 
 if __name__ == '__main__':
