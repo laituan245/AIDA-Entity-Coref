@@ -23,7 +23,7 @@ def extract_predicted_pairs(entity_mentions, preds):
     return predicted_pairs
 
 def inference(jsons_dir, config_name='basic',
-              pretrained_model='/shared/nas/data/m1/tuanml/coref/trained_model/cn_en_entity_coref.pt'):
+              pretrained_model='/shared/nas/data/m1/tuanml2/edl_coref/trained_model/cn_en_entity_coref.pt'):
     # Prepare the config, the tokenizer, and the model
     configs = prepare_configs(config_name)
     tokenizer = AutoTokenizer.from_pretrained(configs['transformer'], do_basic_tokenize=False)
@@ -60,4 +60,4 @@ def inference(jsons_dir, config_name='basic',
 
 
 if __name__ == '__main__':
-    inference('/shared/nas/data/m1/manling2/aida_docker_test/edl_en_zh/testdata_zh/edl/json', 'basic')
+    inference('/shared/nas/data/m1/manling2/aida_docker_test/edl_en_zh/testdata_crosslingual/json', 'basic')
