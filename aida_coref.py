@@ -70,12 +70,16 @@ if __name__ == "__main__":
 
     # Read Tab files
     loc2ctx, entity_mentions, id2freebaseid, id2officialkbid, id2type, loc2mentionid = {}, [], {}, {}, {}, {}
+    doc2entitymentions = {}
     entity_mentions_official = read_tab(args.edl_official)
     entity_mentions_freebase = read_tab(args.edl_freebase)
     for e in entity_mentions_official:
         loc = e['doc_id'], e['start_char'], e['end_char']
         if not loc in loc2ctx: loc2ctx[loc] = len(loc2ctx)
         loc2mentionid[loc] = e['mention_id']
+        if not e['doc_id'] in doc2entitymentions:
+            doc2entitymentions[e['doc_id']] = set()
+        doc2entitymentions[e['doc_id']].add((e['start_char'], e['end_char']))
     for e in entity_mentions_freebase:
         loc = e['doc_id'], e['start_char'], e['end_char']
         assert(loc in loc2ctx)
@@ -114,7 +118,7 @@ if __name__ == "__main__":
 
     # Extract predicted coreferential pairs
     assert(PRETRAINED_MODEL and os.path.isfile(PRETRAINED_MODEL))
-    predicted_pairs, id2entity = inference(args.json_dir, pretrained_model=PRETRAINED_MODEL)
+    predicted_pairs, id2entity = inference(args.json_dir, doc2entitymentions, pretrained_model=PRETRAINED_MODEL)
     for _id in id2freebaseid:
         id2entity[_id]['freebase_id'] = id2freebaseid[_id]
     for _id in id2officialkbid:

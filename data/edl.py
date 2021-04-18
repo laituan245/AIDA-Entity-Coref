@@ -7,7 +7,7 @@ from os.path import isfile, join
 from utils import *
 
 # Helper Functions
-def load_edl_doc(doc_path, tokenizer, verbose=True):
+def load_edl_doc(doc_path, doc2entitymentions, tokenizer, verbose=True):
     with open(doc_path, 'r', encoding='utf-8') as r:
         doc_id, words_ctx, tokens_ids, sentences, entity_mentions = None, 0, [], [], []
         for line in r:
@@ -15,12 +15,12 @@ def load_edl_doc(doc_path, tokenizer, verbose=True):
             sentences.append(sent['tokens'])
             graph = sent['graph']
             tokens_ids += sent['token_ids']
-            for entity in graph['entities']:
-                entity[0] += words_ctx
-                entity[1] += words_ctx-1  # Convert to inclusive endpoint
-                entity_mentions.append({
-                    'start_token': entity[0], 'end_token': entity[1]
-                })
+            #for entity in graph['entities']:
+            #    entity[0] += words_ctx
+            #    entity[1] += words_ctx-1  # Convert to inclusive endpoint
+            #    entity_mentions.append({
+            #        'start_token': entity[0], 'end_token': entity[1]
+            #    })
             # Update words_ctx
             words_ctx += len(sent['tokens'])
             # Update doc_id (if None)
@@ -30,6 +30,27 @@ def load_edl_doc(doc_path, tokenizer, verbose=True):
     assert(len(words) == words_ctx)
     assert(len(words) == len(tokens_ids))
 
+    # Build startchar2token and endchar2token
+    startchar2token, endchar2token = {}, {}
+    for ix, token_id in enumerate(tokens_ids):
+        s_char, e_char = token_id.split(':')[1].split('-')
+        s_char = int(s_char)
+        e_char = int(e_char)
+        startchar2token[s_char] = ix
+        endchar2token[e_char] =ix
+
+    # Extract entity_mentions
+    entity_mentions = doc2entitymentions.get(doc_id, set())
+    _filtered_mentions = []
+    for e in entity_mentions:
+        start_token = startchar2token[int(e[0])]
+        end_token = endchar2token[int(e[1])]
+        _filtered_mentions.append({
+            'start_token': start_token, 'end_token': end_token
+        })
+    entity_mentions = _filtered_mentions
+
+
     # Build an EDLDocument
     aida_doc = EDLDocument(doc_id, words, tokens_ids, entity_mentions, tokenizer)
 
@@ -38,12 +59,12 @@ def load_edl_doc(doc_path, tokenizer, verbose=True):
 
     return aida_doc
 
-def load_edl_datasets(jsons_dir, tokenizer):
+def load_edl_datasets(jsons_dir, doc2entitymentions, tokenizer):
     edl_docs = []
     filenames = [f for f in listdir(jsons_dir) if isfile(join(jsons_dir, f)) and f.endswith('json')]
     for filename in filenames:
         file_path = join(jsons_dir, filename)
-        edl_doc = load_edl_doc(file_path, tokenizer, verbose=True)
+        edl_doc = load_edl_doc(file_path, doc2entitymentions, tokenizer, verbose=True)
         edl_docs.append(edl_doc)
     print(f'Number of docs loaded from {jsons_dir}: {len(edl_docs)}')
     return edl_docs

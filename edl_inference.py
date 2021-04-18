@@ -22,7 +22,7 @@ def extract_predicted_pairs(entity_mentions, preds):
 
     return predicted_pairs
 
-def inference(jsons_dir, config_name='basic',
+def inference(jsons_dir, doc2entitymentions, config_name='basic',
               pretrained_model='/shared/nas/data/m1/tuanml2/edl_coref/trained_model/cn_en_entity_coref.pt'):
     # Prepare the config, the tokenizer, and the model
     configs = prepare_configs(config_name)
@@ -37,7 +37,7 @@ def inference(jsons_dir, config_name='basic',
         print('No pretrained ckpt reloaded')
 
     # Load data for inference
-    edl_docs = load_edl_datasets(jsons_dir, tokenizer)
+    edl_docs = load_edl_datasets(jsons_dir, doc2entitymentions, tokenizer)
     id2entity = {}
     for doc in edl_docs:
         for e in doc.entity_mentions:
