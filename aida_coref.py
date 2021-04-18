@@ -69,12 +69,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     # Read Tab files
-    loc2ctx, entity_mentions, id2freebaseid, id2officialkbid, id2type = {}, [], {}, {}, {}
+    loc2ctx, entity_mentions, id2freebaseid, id2officialkbid, id2type, loc2mentionid = {}, [], {}, {}, {}, {}
     entity_mentions_official = read_tab(args.edl_official)
     entity_mentions_freebase = read_tab(args.edl_freebase)
     for e in entity_mentions_official:
         loc = e['doc_id'], e['start_char'], e['end_char']
         if not loc in loc2ctx: loc2ctx[loc] = len(loc2ctx)
+        loc2mentionid[loc] = e['mention_id']
     for e in entity_mentions_freebase:
         loc = e['doc_id'], e['start_char'], e['end_char']
         assert(loc in loc2ctx)
@@ -88,7 +89,7 @@ if __name__ == "__main__":
         entity_mentions[ctx]['doc_id'] = doc_id
         entity_mentions[ctx]['start_char'] = start_char
         entity_mentions[ctx]['end_char'] = end_char
-        entity_mentions[ctx]['mention_id'] = 'ZH_MENTION_{}'.format(ctx_str)
+        entity_mentions[ctx]['mention_id'] = loc2mentionid[loc]
 
     # Combine entity linking results
     for e1 in entity_mentions_freebase:
