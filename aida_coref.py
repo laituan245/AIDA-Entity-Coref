@@ -57,10 +57,10 @@ def cluster_from_pairs(id2entity, pairs):
 if __name__ == "__main__":
     # Parse argument
     parser = ArgumentParser()
-    parser.add_argument('-edl_official', '--edl_official', default='samples/en.linking.tab')
-    parser.add_argument('-edl_freebase', '--edl_freebase', default='samples/en.linking.freebase.tab')
-    parser.add_argument('-l', '--ltf_dir', default='samples/ltf')
-    parser.add_argument('-o', '--output', default='samples/output.tab')
+    parser.add_argument('-edl_official', '--edl_official', default='/shared/nas/data/m1/manling2/mmqa/data/voa_v1_processed/caption_separate/split_year/VOA_EN_NW_2009/edl/en.linking.tab')
+    parser.add_argument('-edl_freebase', '--edl_freebase', default='/shared/nas/data/m1/manling2/mmqa/data/voa_v1_processed/caption_separate/split_year/VOA_EN_NW_2009/edl/en.linking.freebase.tab')
+    parser.add_argument('-l', '--ltf_dir', default='/shared/nas/data/m1/manling2/mmqa/data/voa_v1_processed/caption_separate/split_year/VOA_EN_NW_2009/ltf')
+    parser.add_argument('-o', '--output', default='/shared/nas/data/m1/tuanml2/nogpu_output.tab')
     parser.add_argument('-d', '--debug', default=False)
 
     args = parser.parse_args()
