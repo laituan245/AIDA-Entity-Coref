@@ -114,14 +114,12 @@ if __name__ == "__main__":
     tokenizer = AutoTokenizer.from_pretrained(configs['transformer'], do_basic_tokenize=False)
     model = CorefModel(configs)
     if PRETRAINED_MODEL and os.path.isfile(PRETRAINED_MODEL):
-        if torch.cuda.is_available():
-            checkpoint = torch.load(PRETRAINED_MODEL)
-        else:
-            checkpoint = torch.load(PRETRAINED_MODEL, map_location='cpu')
+        checkpoint = torch.load(PRETRAINED_MODEL, map_location=model.device)
         model.load_state_dict(checkpoint['model_state_dict'], strict=False)
         print('Reload the model')
     elif not args.debug:
         raise Exception('A trained model is required')
+    model.to(model.device)
 
     # Create AIDADocument
     docs = []

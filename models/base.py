@@ -55,7 +55,7 @@ class BaseModel(nn.Module):
     def __init__(self, configs):
         super(BaseModel, self).__init__()
         self.configs = configs
-        self.device = torch.device('cuda' if torch.cuda.is_available() and not configs['no_cuda'] else 'cpu')
+        self.device = torch.device('cpu')
 
     def get_optimizer(self, num_warmup_steps, num_train_steps, start_iter = 0):
         # Extract transformer parameters and task-specific parameters
