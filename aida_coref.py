@@ -178,13 +178,8 @@ if __name__ == "__main__":
                 for i in range(len(c)):
                     for j in range(i+1, len(c)):
                         should_insert = True
-                        if not c[i]['freebase_id'].startswith('NIL') and not c[j]['freebase_id'].startswith('NIL') \
-                        and not c[i]['official_kb_id'].startswith('NIL') and not c[j]['official_kb_id'].startswith('NIL'):
-                            if c[i]['freebase_id'] != c[j]['freebase_id'] and c[i]['official_kb_id'] != c[j]['official_kb_id']:
-                                should_insert = False
-                        if should_insert:
-                            predicted_pairs.add((c[i]['mention_id'], c[j]['mention_id']))
-                            predicted_pairs.add((c[j]['mention_id'], c[i]['mention_id']))
+                        predicted_pairs.add((c[i]['mention_id'], c[j]['mention_id']))
+                        predicted_pairs.add((c[j]['mention_id'], c[i]['mention_id']))
 
             # Sanity check
             for e, m_start, m_end in zip(entities, mention_starts, mention_ends):
