@@ -6,6 +6,7 @@ from constants import *
 from utils import *
 from data import AIDADataset, AIDADocument
 from argparse import ArgumentParser
+from tqdm import tqdm
 
 # Constants
 PRETRAINED_MODEL = 'model.pt'
@@ -145,7 +146,7 @@ if __name__ == "__main__":
     # Apply the coref model
     with torch.no_grad():
         doc2id2cluster, doc2clusterlabels = {}, {}
-        for doc_index, tensorized_example in enumerate(dataset.tensorized_examples[TEST]):
+        for doc_index, tensorized_example in tqdm(enumerate(dataset.tensorized_examples[TEST])):
             entities = dataset.data[doc_index].entity_mentions
             if len(entities) == 0: continue
             preds = model(*tensorized_example)[1]
