@@ -1,5 +1,12 @@
+import torch
 import os
+import random
 import json
+import numpy as np
+
+torch.manual_seed(0)
+random.seed(0)
+np.random.seed(0)
 
 from os.path import join
 from constants import *
@@ -61,10 +68,10 @@ def cluster_from_pairs(id2entity, pairs):
 if __name__ == "__main__":
     # Parse argument
     parser = ArgumentParser()
-    parser.add_argument('-edl_official', '--edl_official', default='/shared/nas/data/m1/manling2/aida_docker_test/edl_en_zh/testdata_crosslingual/linking.tab')
-    parser.add_argument('-edl_freebase', '--edl_freebase', default='/shared/nas/data/m1/manling2/aida_docker_test/edl_en_zh/testdata_crosslingual/linking.freebase.tab')
-    parser.add_argument('-l', '--json_dir', default='/shared/nas/data/m1/manling2/aida_docker_test/edl_en_zh/testdata_crosslingual/json/')
-    parser.add_argument('-o', '--output', default='samples/edl_output.tab')
+    parser.add_argument('-edl_official', '--edl_official', default='/shared/nas/data/m1/tuanml2/edl_zh_en_uiuc/sample_data_zh/sample_input/testdata_zh/edl/zh.linking.tab')
+    parser.add_argument('-edl_freebase', '--edl_freebase', default='/shared/nas/data/m1/tuanml2/edl_zh_en_uiuc/sample_data_zh/sample_input/testdata_zh/edl/zh.linking.freebase.tab')
+    parser.add_argument('-l', '--json_dir', default='/shared/nas/data/m1/tuanml2/edl_zh_en_uiuc/sample_data_zh/sample_input/testdata_zh/edl/json')
+    parser.add_argument('-o', '--output', default='merged_final.tab')
 
     args = parser.parse_args()
 
