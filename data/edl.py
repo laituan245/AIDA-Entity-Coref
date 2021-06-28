@@ -74,6 +74,10 @@ def load_edl_datasets(jsons_dir, doc2entitymentions, tokenizer):
 class EDLDocument:
     def __init__(self, doc_id, words, words_ids, entity_mentions, tokenizer):
         assert(len(words) == len(words_ids))
+
+        # Sort entity_mentions
+        entity_mentions = sorted(entity_mentions, key=lambda s: s['start_token'])
+
         self.doc_id = doc_id
         self.words = words
         self.words_ids = words_ids
