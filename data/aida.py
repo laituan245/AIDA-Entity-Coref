@@ -6,6 +6,9 @@ from utils import *
 
 class AIDADocument:
     def __init__(self, doc_id, words, entity_mentions, tokenizer):
+        # Sort entity_mentions
+        entity_mentions = sorted(entity_mentions, key=lambda s: s['start_token'])
+
         self.doc_id = doc_id
         self.words = words
         self.entity_mentions = entity_mentions
