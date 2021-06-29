@@ -49,6 +49,8 @@ class CorefModel(BaseModel):
         # Mention Features
         features = self.encoder(input_ids, input_masks, mask_windows, num_windows, window_size, is_training)
         features = features.squeeze()
+        if len(features.size()) == 1:
+            features = features.unsqueeze(0)
         mention_features = self.get_span_emb(features, gold_starts, gold_ends)
 
         if is_training:
