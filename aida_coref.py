@@ -1,5 +1,12 @@
+import torch
 import os
+import random
 import json
+import numpy as np
+
+torch.manual_seed(0)
+random.seed(0)
+np.random.seed(0)
 
 from os.path import join
 from constants import *
