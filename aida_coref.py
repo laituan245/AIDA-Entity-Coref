@@ -74,6 +74,7 @@ if __name__ == "__main__":
     parser.add_argument('-o', '--output', default='merged_final.tab')
 
     args = parser.parse_args()
+    args.edl_official, args.edl_freebase = args.edl_freebase, args.edl_official # Quick fix for outputting edl_freebase
 
     # Read Tab files
     loc2ctx, entity_mentions, id2freebaseid, id2officialkbid, id2type, loc2mentionid = {}, [], {}, {}, {}, {}
