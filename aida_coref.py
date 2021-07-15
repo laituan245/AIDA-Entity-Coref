@@ -72,6 +72,8 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
 
+    args.edl_official, args.edl_freebase = args.edl_freebase, args.edl_official # Quick fix for outputting edl_freebase
+
     # Read LTF files
     doc2tokens = read_ltf_files(args.ltf_dir)
 
