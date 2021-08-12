@@ -7,6 +7,7 @@ from utils import *
 from data import AIDADataset, AIDADocument
 from argparse import ArgumentParser
 from tqdm import tqdm
+from scipy.special import softmax
 
 # Constants
 PRETRAINED_MODEL = 'model.pt'
@@ -143,6 +144,8 @@ if __name__ == "__main__":
         docs.append(AIDADocument(doc_id, words, doc_mentions, tokenizer))
     dataset = AIDADataset(docs)
 
+    scores_logs = open('scores_logs.txt', 'w+')
+    scores_logs.write('Current_Span\tAntecedent_Candidate\tScore\n')
     # Apply the coref model
     with torch.no_grad():
         doc2id2cluster, doc2clusterlabels = {}, {}
@@ -153,6 +156,26 @@ if __name__ == "__main__":
             preds = [x.cpu().data.numpy() for x in preds]
             mention_starts, mention_ends, top_antecedents, top_antecedent_scores = preds
             predicted_antecedents = get_predicted_antecedents(top_antecedents, top_antecedent_scores)
+            top_antecedent_scores = softmax(top_antecedent_scores, axis=-1)
+
+            # Print out scores
+            for ix, entity in enumerate(entities):
+                # Sanity checks
+                assert(entity['start'] == mention_starts[ix])
+                assert(entity['end'] == mention_ends[ix])
+                # Current span
+                doc_id = entity['doc_id']
+                start_char = entity['start_char']
+                end_char = entity['end_char']
+                cur_span_id = f'{doc_id}:{start_char}-{end_char}'
+                # No antecedent
+                scores_logs.write(f'{cur_span_id}\tNo_Antecedent\t{top_antecedent_scores[ix, 0]}\n')
+                for jx in range(ix):
+                    prev_doc_id = entities[jx]['doc_id']
+                    prev_start_char = entities[jx]['start_char']
+                    prev_end_char = entities[jx]['end_char']
+                    prev_span_id = f'{prev_doc_id}:{prev_start_char}-{prev_end_char}'
+                    scores_logs.write(f'{cur_span_id}\t{prev_span_id}\t{top_antecedent_scores[ix, jx+1]}\n')
 
             # Build id2entity
             id2entity = {}
@@ -207,3 +230,5 @@ if __name__ == "__main__":
                 es[4] = clusterlabels[id2cluster[entity_id]]
                 line = '\t'.join(es)
                 f.write(line)
+
+    scores_logs.close()
