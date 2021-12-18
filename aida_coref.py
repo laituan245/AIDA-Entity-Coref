@@ -186,18 +186,21 @@ if __name__ == "__main__":
                 if len(c) <= 1: continue
                 for i in range(len(c)):
                     for j in range(i+1, len(c)):
-                        should_insert = True
-                        if not c[i]['freebase_id'].startswith('NIL') and not c[j]['freebase_id'].startswith('NIL') \
-                        and not c[i]['official_kb_id'].startswith('NIL') and not c[j]['official_kb_id'].startswith('NIL'):
-                            if c[i]['freebase_id'] != c[j]['freebase_id'] and c[i]['official_kb_id'] != c[j]['official_kb_id']:
-                                should_insert = False
-                        if should_insert:
-                            predicted_pairs.add((c[i]['mention_id'], c[j]['mention_id']))
-                            predicted_pairs.add((c[j]['mention_id'], c[i]['mention_id']))
+                        predicted_pairs.add((c[i]['mention_id'], c[j]['mention_id']))
+                        predicted_pairs.add((c[j]['mention_id'], c[i]['mention_id']))
 
             # Sanity check
             for e, m_start, m_end in zip(entities, mention_starts, mention_ends):
                 assert(e['start'] == m_start and e['end'] == m_end)
+
+            # Two entity mentions are coreferential if they are linked to the same KB ID
+            for e1 in entities:
+                for e2 in entities:
+                    if e1['mention_id'] == e2['mention_id']: continue
+                    if e1['freebase_id'].startswith('NIL'): continue
+                    if e2['freebase_id'].startswith('NIL'): continue
+                    if e1['freebase_id'] == e2['freebase_id']:
+                        predicted_pairs.add((e1['mention_id'], e2['mention_id']))
 
             # First cluster
             clusters, id2cluster, clusterlabels = cluster_from_pairs(id2entity, predicted_pairs)
