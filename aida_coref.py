@@ -112,13 +112,18 @@ if __name__ == "__main__":
         assert(entity_mentions[ctx]['start_char'] == e1['start_char'])
         assert(entity_mentions[ctx]['end_char'] == e1['end_char'])
 
+    exception1 = 0
     for e2 in entity_mentions_official:
         loc = e2['doc_id'], e2['start_char'], e2['end_char']
         ctx = loc2ctx[loc]
         entity_mentions[ctx]['official_kb_id'] = e2['kb_id']
-        assert(entity_mentions[ctx]['start_char'] == e2['start_char'])
-        assert(entity_mentions[ctx]['end_char'] == e2['end_char'])
-        assert(entity_mentions[ctx]['text'] == e2['text'])
+        try:
+            assert(entity_mentions[ctx]['start_char'] == e2['start_char'])
+            assert(entity_mentions[ctx]['end_char'] == e2['end_char'])
+            assert(entity_mentions[ctx]['text'] == e2['text'])
+        except:
+            exception1 += 1
+    print('Number of exceptions: {}'.format(exception1))
 
     # Prepare the config, the tokenizer, and the model
     configs = prepare_configs(CONFIG_NAME)
@@ -136,6 +141,7 @@ if __name__ == "__main__":
 
     # Create AIDADocument
     docs = []
+    exception = 0
     for doc_id in doc2tokens:
         tokens = doc2tokens[doc_id]
         words = [t[-1] for t in tokens]
@@ -145,13 +151,18 @@ if __name__ == "__main__":
             end2word[int(end)] = ix
         doc_mentions = []
         for e in entity_mentions:
-            if e['doc_id'] == doc_id:
-                e['start_token'] = start2word[int(e['start_char'])]
-                e['end_token'] = end2word[int(e['end_char'])]
-                doc_mentions.append(e)
+            try:
+                if e['doc_id'] == doc_id:
+                    e['start_token'] = start2word[int(e['start_char'])]
+                    e['end_token'] = end2word[int(e['end_char'])]
+                    doc_mentions.append(e)
+            except:
+                exception += 1
+                continue
         if len(words) == 0: continue
         docs.append(AIDADocument(doc_id, words, doc_mentions, tokenizer))
     dataset = AIDADataset(docs)
+    print('Number of exceptions: {}'.format(exception))
 
     # Apply the coref model
     with torch.no_grad():
@@ -188,6 +199,10 @@ if __name__ == "__main__":
                 if len(c) <= 1: continue
                 for i in range(len(c)):
                     for j in range(i+1, len(c)):
+                        if c[i]['freebase_id'].startswith('Q') and \
+                        c[j]['freebase_id'].startswith('Q') and \
+                        c[i]['freebase_id'] != c[j]['freebase_id']:
+                            continue
                         predicted_pairs.add((c[i]['mention_id'], c[j]['mention_id']))
                         predicted_pairs.add((c[j]['mention_id'], c[i]['mention_id']))
 
@@ -211,6 +226,7 @@ if __name__ == "__main__":
 
         # Output
         lines = []
+        exception2 = 0
         with open(args.edl_official, 'r', encoding='utf8') as f:
             for line in f: lines.append(line)
         with open(args.output_tab, 'w+', encoding='utf8') as f:
@@ -220,10 +236,15 @@ if __name__ == "__main__":
                 start_char, end_char = text_loc.split('-')
                 entity_id = entity_mentions[loc2ctx[(doc_id, start_char, end_char)]]['mention_id']
                 es[1] = entity_id
-                clusterlabels = doc2clusterlabels[doc_id]
-                id2cluster = doc2id2cluster[doc_id]
-                es[4] = clusterlabels[id2cluster[entity_id]]
-                line = '\t'.join(es)
-                f.write(line)
+                try:
+                    clusterlabels = doc2clusterlabels[doc_id]
+                    id2cluster = doc2id2cluster[doc_id]
+                    es[4] = clusterlabels[id2cluster[entity_id]]
+                    line = '\t'.join(es)
+                    f.write(line)
+                except:
+                    exception2 += 1
+                    continue
+        print('Number of exceptions: {}'.format(exception2))
         # Convert Tab to CS
         tab2cs(args.output_tab, args.output_cs, 'EDL_ENG')
