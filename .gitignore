@@ -4,6 +4,7 @@ data/arabic/*
 data/chinese/*
 data/english/*
 predictions/
+model.pt
 
 
 # Byte-compiled / optimized / DLL files

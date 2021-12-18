@@ -8,6 +8,7 @@ torch.manual_seed(0)
 random.seed(0)
 np.random.seed(0)
 
+from tab2cs import tab2cs
 from os.path import join
 from constants import *
 from utils import *
@@ -64,10 +65,11 @@ def cluster_from_pairs(id2entity, pairs):
 if __name__ == "__main__":
     # Parse argument
     parser = ArgumentParser()
-    parser.add_argument('-edl_official', '--edl_official', default='samples/en.linking.tab')
-    parser.add_argument('-edl_freebase', '--edl_freebase', default='samples/en.linking.freebase.tab')
-    parser.add_argument('-l', '--ltf_dir', default='samples/ltf')
-    parser.add_argument('-o', '--output', default='samples/output.tab')
+    parser.add_argument('-edl_official', '--edl_official', default='/shared/nas/data/m1/tuanml/aida_evaluation/en/linked_en_entity.tab')
+    parser.add_argument('-edl_freebase', '--edl_freebase', default='/shared/nas/data/m1/tuanml/aida_evaluation/en/linked_en_entity.tab')
+    parser.add_argument('-l', '--ltf_dir', default='/shared/nas/data/m1/manling2/aida_docker_test/uiuc_ie_pipeline_fine_grained/output/output_LDC2021E11/en/ltf')
+    parser.add_argument('--output_tab', default='/shared/nas/data/m1/tuanml/aida_evaluation/en/merged_en_entity.tab')
+    parser.add_argument('--output_cs', default='/shared/nas/data/m1/tuanml/aida_evaluation/en/merged_en_entity.cs')
     parser.add_argument('-d', '--debug', default=False)
 
     args = parser.parse_args()
@@ -211,7 +213,7 @@ if __name__ == "__main__":
         lines = []
         with open(args.edl_official, 'r', encoding='utf8') as f:
             for line in f: lines.append(line)
-        with open(args.output, 'w+', encoding='utf8') as f:
+        with open(args.output_tab, 'w+', encoding='utf8') as f:
             for line in lines:
                 es = line.split('\t')
                 doc_id, text_loc = es[3].split(':')
@@ -223,3 +225,5 @@ if __name__ == "__main__":
                 es[4] = clusterlabels[id2cluster[entity_id]]
                 line = '\t'.join(es)
                 f.write(line)
+        # Convert Tab to CS
+        tab2cs(args.output_tab, args.output_cs, 'EDL_ENG')
